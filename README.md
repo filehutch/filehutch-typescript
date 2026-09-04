@@ -81,6 +81,76 @@ await hutch.transformUrl(id, { transform: "avatar" })    // private images: sign
 Rendering is a property of the project's storage, not of this SDK. Where it cannot be done you get
 a `TransformsUnsupportedError` whose message names what to set up — never a URL that 404s.
 
+## Browser uploads
+
+`@assethutch/sdk/browser` is the other half: it never sees the API key. Two small JSON calls go to
+*your* server, which holds the key, and the bytes go straight to storage.
+
+```
+browser → your server (holds the key) → AssetHutch     two control-plane calls
+browser ────────────────────────────→ storage          the bytes
+```
+
+Your server needs two routes. The [`assethutch` gem](https://github.com/assethutch/assethutch-ruby)
+mounts them for Rails (`mount Assethutch::Engine => "/assethutch"`); in anything else, wire them to
+`createUpload` and `completeUpload` on the server client above.
+
+```
+POST <endpoint>              {policy, filename, content_type, byte_size} → {upload, file}
+POST <endpoint>/:id/complete                                             → {file}
+```
+
+### The element
+
+A custom element, so the same tag works in React, Vue, Svelte, Hotwire, or a plain `.html` file.
+
+```ts
+import { defineUploadElement } from "@assethutch/sdk/browser"
+defineUploadElement()
+```
+
+```html
+<form action="/users/1" method="post">
+  <assethutch-upload policy="avatars" name="user[avatar_file_id]" accept="image/*"></assethutch-upload>
+  <button>Save</button>
+</form>
+```
+
+It builds a file input, a hidden field, a `<progress>` and a status line **in the light DOM**, so
+your own CSS styles them like any other input — no shadow-root workarounds. On success the hidden
+field holds the file id, which is all your form submits: no bucket, no key, no URL.
+
+The surrounding form's submit buttons are disabled while bytes are in flight, so a half-uploaded
+form can't be posted. A failed upload clears the field rather than leaving a stale id behind.
+
+| | |
+| --- | --- |
+| Attributes | `policy` (required), `name`, `endpoint` (default `/assethutch/uploads`), `accept`, `disabled` |
+| Properties | `fileId`, `uploading` |
+| Methods | `abort()` |
+| Events | `assethutch:start`, `assethutch:progress` (`detail.percent`), `assethutch:complete` (`detail.file`), `assethutch:error` (`detail.error`) |
+
+Events bubble and are composed, so you can listen on a container or on `document`.
+
+### Or just the function
+
+```ts
+import { directUpload } from "@assethutch/sdk/browser"
+
+const file = await directUpload(input.files[0], {
+  policy: "avatars",
+  onProgress: (percent) => (bar.value = percent),
+  signal: controller.signal,
+})
+file.id // => "file_8fK2…"
+```
+
+Progress comes from `XMLHttpRequest`, because `fetch` still cannot report upload progress. The CSRF
+token is read from `<meta name="csrf-token">` unless you pass `csrfToken`. Failures raise
+`DirectUploadError` with the server's `code` and `status` — including `storage_rejected` when the
+bucket refuses the PUT, and `network`, whose message points at the bucket's CORS rules, since that
+is nearly always the cause.
+
 ## Errors
 
 Everything thrown extends `AssethutchError`. API failures carry a stable `code`, the `status`, and
