@@ -181,6 +181,19 @@ try {
 }
 ```
 
+## Releasing
+
+Bump `version` in `package.json`, write the entry in `CHANGELOG.md`, then tag:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+The release workflow refuses a tag that disagrees with `package.json` before building anything,
+runs the suite, and publishes with a provenance attestation so the tarball can be traced to the
+commit it was built from. It needs an `NPM_TOKEN` secret with publish rights on the `@assethutch`
+scope.
+
 ## Development
 
 ```sh
