@@ -16,7 +16,7 @@ async function mount(harness: any, html: string) {
   const { defineUploadElement } = await loadElementModule()
   defineUploadElement()
   harness.window.document.body.innerHTML = html
-  return harness.window.document.querySelector("assethutch-upload") as any
+  return harness.window.document.querySelector("asset-hutch-upload") as any
 }
 
 /** Picks a file and waits for the upload to settle. */
@@ -30,7 +30,7 @@ async function choose(element: any, file: File) {
 test("builds its controls in the light DOM so host CSS applies", async () => {
   const harness = browserHarness({ routes: uploadRoutes() })
   try {
-    const element = await mount(harness, `<assethutch-upload policy="avatars" name="user[avatar_file_id]" accept="image/*"></assethutch-upload>`)
+    const element = await mount(harness, `<asset-hutch-upload policy="avatars" name="user[avatar_file_id]" accept="image/*"></asset-hutch-upload>`)
 
     assert.equal(element.shadowRoot, null)
     assert.equal(element.querySelector("input[type=file]").accept, "image/*")
@@ -45,7 +45,7 @@ test("builds its controls in the light DOM so host CSS applies", async () => {
 test("uploading puts the file id in the hidden field the form submits", async () => {
   const harness = browserHarness({ routes: uploadRoutes() })
   try {
-    const element = await mount(harness, `<assethutch-upload policy="avatars" name="user[avatar_file_id]"></assethutch-upload>`)
+    const element = await mount(harness, `<asset-hutch-upload policy="avatars" name="user[avatar_file_id]"></asset-hutch-upload>`)
     await choose(element, pngFile(harness.window))
 
     assert.equal(element.fileId, FILE_ID)
@@ -64,12 +64,12 @@ test("emits the documented events in order", async () => {
     xhr: { progress: [{ loaded: 1, total: 2 }, { loaded: 2, total: 2 }] },
   })
   try {
-    const element = await mount(harness, `<assethutch-upload policy="avatars"></assethutch-upload>`)
+    const element = await mount(harness, `<asset-hutch-upload policy="avatars"></asset-hutch-upload>`)
     const seen: string[] = []
     const percents: number[] = []
     for (const name of ["start", "progress", "complete", "error"]) {
       // Listening on document proves the events bubble out of the element.
-      harness.window.document.addEventListener(`assethutch:${name}`, (event: any) => {
+      harness.window.document.addEventListener(`asset-hutch:${name}`, (event: any) => {
         seen.push(name)
         if (name === "progress") percents.push(event.detail.percent)
       })
@@ -88,7 +88,7 @@ test("the surrounding form cannot be submitted mid-upload", async () => {
   const harness = browserHarness({ routes: uploadRoutes(), xhr: { hang: true } })
   try {
     const element = await mount(harness, `
-      <form><assethutch-upload policy="avatars"></assethutch-upload><button type="submit">Save</button></form>
+      <form><asset-hutch-upload policy="avatars"></asset-hutch-upload><button type="submit">Save</button></form>
     `)
     const button = harness.window.document.querySelector("button")!
 
@@ -114,18 +114,18 @@ test("a failed upload clears the id, reports why, and re-enables the form", asyn
   })
   try {
     const element = await mount(harness, `
-      <form><assethutch-upload policy="avatars" name="user[avatar_file_id]"></assethutch-upload><button type="submit">Save</button></form>
+      <form><asset-hutch-upload policy="avatars" name="user[avatar_file_id]"></asset-hutch-upload><button type="submit">Save</button></form>
     `)
     element.fileId = "file_stalestalestale0000"
 
     const errors: any[] = []
-    harness.window.document.addEventListener("assethutch:error", (event: any) => errors.push(event.detail.error))
+    harness.window.document.addEventListener("asset-hutch:error", (event: any) => errors.push(event.detail.error))
     await choose(element, pngFile(harness.window))
 
     assert.equal(element.fileId, "", "a stale id must not survive a failed replacement")
     assert.equal(errors[0].code, "policy_violation")
     assert.match(element.querySelector("[role=status]").textContent, /too large/)
-    assert.equal(element.querySelector("[role=status]").dataset.assethutchState, "error")
+    assert.equal(element.querySelector("[role=status]").dataset.assetHutchState, "error")
     assert.equal(harness.window.document.querySelector("button").disabled, false)
   } finally {
     harness.cleanup()
@@ -135,9 +135,9 @@ test("a failed upload clears the id, reports why, and re-enables the form", asyn
 test("a missing policy fails loudly instead of uploading somewhere unintended", async () => {
   const harness = browserHarness({ routes: uploadRoutes() })
   try {
-    const element = await mount(harness, `<assethutch-upload></assethutch-upload>`)
+    const element = await mount(harness, `<asset-hutch-upload></asset-hutch-upload>`)
     const errors: any[] = []
-    harness.window.document.addEventListener("assethutch:error", (event: any) => errors.push(event.detail.error))
+    harness.window.document.addEventListener("asset-hutch:error", (event: any) => errors.push(event.detail.error))
 
     await choose(element, pngFile(harness.window))
 
@@ -151,10 +151,10 @@ test("a missing policy fails loudly instead of uploading somewhere unintended", 
 test("registering twice is harmless", async () => {
   const harness = browserHarness({})
   try {
-    const { defineUploadElement, AssethutchUploadElement } = await loadElementModule()
+    const { defineUploadElement, AssetHutchUploadElement } = await loadElementModule()
     defineUploadElement()
     defineUploadElement()
-    assert.equal(harness.window.customElements.get("assethutch-upload"), AssethutchUploadElement)
+    assert.equal(harness.window.customElements.get("asset-hutch-upload"), AssetHutchUploadElement)
   } finally {
     harness.cleanup()
   }

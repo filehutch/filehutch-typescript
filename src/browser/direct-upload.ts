@@ -46,7 +46,7 @@ export interface DirectUploadOptions {
   signal?: AbortSignal
 }
 
-const DEFAULT_URL = "/assethutch/uploads"
+const DEFAULT_URL = "/asset_hutch/uploads"
 
 /**
  * Runs the three steps and resolves with the ready file. Framework-neutral:

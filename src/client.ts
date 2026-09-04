@@ -1,7 +1,7 @@
 import { ConfigurationError, ConnectionError, buildApiError } from "./errors.js"
 import { toCreatedUpload, toFile, toProject, toTransform } from "./mappers.js"
 import type {
-  AssethutchFile, ClientOptions, CreateUploadParams, CreatedUpload, DeliveryUrl, FileId,
+  AssetHutchFile, ClientOptions, CreateUploadParams, CreatedUpload, DeliveryUrl, FileId,
   Project, SignedUrlParams, Transform, TransformUrlParams, UploadAuthorization, UploadParams,
 } from "./types.js"
 
@@ -18,11 +18,11 @@ export type UploadSource = Uint8Array | ArrayBuffer | Blob | string
  * The API key is project-scoped and must stay on your server. Browsers upload
  * through your own endpoints, which call this client — see the README.
  *
- *   const hutch = new Assethutch({ apiKey: process.env.ASSETHUTCH_API_KEY })
+ *   const hutch = new AssetHutch({ apiKey: process.env.ASSET_HUTCH_API_KEY })
  *   const file = await hutch.upload(bytes, { policy: "avatars", filename: "me.png" })
  *   file.id // => "file_8fK2…" — the only thing you store
  */
-export class Assethutch {
+export class AssetHutch {
   readonly url: string
   readonly timeoutMs: number
   private readonly apiKey: string
@@ -30,11 +30,11 @@ export class Assethutch {
   private readonly userAgent: string
 
   constructor(options: ClientOptions = {}) {
-    const apiKey = options.apiKey ?? envVar("ASSETHUTCH_API_KEY")
+    const apiKey = options.apiKey ?? envVar("ASSET_HUTCH_API_KEY")
     if (!apiKey) {
-      throw new ConfigurationError("No API key. Pass apiKey, or set ASSETHUTCH_API_KEY.")
+      throw new ConfigurationError("No API key. Pass apiKey, or set ASSET_HUTCH_API_KEY.")
     }
-    const url = options.url ?? envVar("ASSETHUTCH_URL") ?? DEFAULT_URL
+    const url = options.url ?? envVar("ASSET_HUTCH_URL") ?? DEFAULT_URL
     try {
       new URL(url)
     } catch {
@@ -44,7 +44,7 @@ export class Assethutch {
     this.apiKey = apiKey
     this.url = url.replace(/\/+$/, "")
     this.timeoutMs = options.timeoutMs ?? 30_000
-    this.userAgent = ["assethutch-ts/" + VERSION, options.userAgent].filter(Boolean).join(" ")
+    this.userAgent = ["asset-hutch-ts/" + VERSION, options.userAgent].filter(Boolean).join(" ")
 
     const impl = options.fetch ?? globalThis.fetch
     if (!impl) throw new ConfigurationError("No global fetch. Use Node 18+, or pass a fetch implementation.")
@@ -63,7 +63,7 @@ export class Assethutch {
     return (body.transforms ?? []).map(toTransform)
   }
 
-  async file(id: FileId): Promise<AssethutchFile> {
+  async file(id: FileId): Promise<AssetHutchFile> {
     return toFile((await this.request("GET", `/api/v1/files/${this.pathId(id)}`)).file)
   }
 
@@ -77,7 +77,7 @@ export class Assethutch {
     }))
   }
 
-  async completeUpload(id: FileId): Promise<AssethutchFile> {
+  async completeUpload(id: FileId): Promise<AssetHutchFile> {
     return toFile((await this.request("POST", `/api/v1/uploads/${this.pathId(id)}/complete`)).file)
   }
 
@@ -115,7 +115,7 @@ export class Assethutch {
    * Request an upload, PUT the bytes straight to storage, and complete it.
    * The bytes never pass through AssetHutch's control plane.
    */
-  async upload(source: UploadSource, params: UploadParams): Promise<AssethutchFile> {
+  async upload(source: UploadSource, params: UploadParams): Promise<AssetHutchFile> {
     const body = await toBytes(source)
     const contentType = params.contentType ?? guessContentType(params.filename)
     const { upload } = await this.createUpload({

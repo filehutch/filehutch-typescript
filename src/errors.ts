@@ -1,5 +1,5 @@
 /** Base for everything this SDK throws. */
-export class AssethutchError extends Error {
+export class AssetHutchError extends Error {
   constructor(message: string) {
     super(message)
     this.name = new.target.name
@@ -7,10 +7,10 @@ export class AssethutchError extends Error {
 }
 
 /** No API key, or a URL that isn't one. Thrown before any request goes out. */
-export class ConfigurationError extends AssethutchError {}
+export class ConfigurationError extends AssetHutchError {}
 
 /** The request never got an answer: DNS, timeout, reset, abort. */
-export class ConnectionError extends AssethutchError {
+export class ConnectionError extends AssetHutchError {
   readonly cause?: unknown
   constructor(message: string, cause?: unknown) {
     super(message)
@@ -19,7 +19,7 @@ export class ConnectionError extends AssethutchError {
 }
 
 /** AssetHutch answered with an error. `code` is stable; match on it, not the message. */
-export class ApiError extends AssethutchError {
+export class ApiError extends AssetHutchError {
   readonly code: string
   readonly status: number
   readonly details?: unknown

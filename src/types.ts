@@ -8,7 +8,7 @@ export type FileStatus = "pending" | "ready" | "failed" | "deleted"
 export type Fit = "cover" | "contain" | "scale_down" | "crop" | "pad"
 export type Format = "auto" | "webp" | "avif" | "jpeg" | "png"
 
-export interface AssethutchFile {
+export interface AssetHutchFile {
   id: FileId
   object: "file"
   filename: string
@@ -84,7 +84,7 @@ export interface UploadAuthorization {
 
 export interface CreatedUpload {
   upload: UploadAuthorization
-  file: AssethutchFile
+  file: AssetHutchFile
 }
 
 /** `expiresAt` is null for public files, which are delivered from a stable URL. */
@@ -96,7 +96,7 @@ export interface DeliveryUrl {
 export interface ClientOptions {
   /** Project-scoped key from Dashboard → API keys. Server side only. */
   apiKey?: string
-  /** Defaults to ASSETHUTCH_URL, then https://api.assethutch.com. */
+  /** Defaults to ASSET_HUTCH_URL, then https://api.assethutch.com. */
   url?: string
   /** Per-request timeout in milliseconds. Default 30000. */
   timeoutMs?: number

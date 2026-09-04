@@ -6,9 +6,9 @@ files, signed URLs, delivery, and named image transforms. Your storage, or Asset
 behind it.
 
 ```ts
-import { Assethutch } from "@assethutch/sdk"
+import { AssetHutch } from "@assethutch/sdk"
 
-const hutch = new Assethutch({ apiKey: process.env.ASSETHUTCH_API_KEY })
+const hutch = new AssetHutch({ apiKey: process.env.ASSET_HUTCH_API_KEY })
 
 const file = await hutch.upload(bytes, { policy: "avatars", filename: "me.png" })
 file.id                    // => "file_8fK2…"  ← the only thing you store
@@ -24,8 +24,8 @@ npm install @assethutch/sdk
 ```
 
 ```sh
-export ASSETHUTCH_API_KEY=ah_…    # Dashboard → API keys (project-scoped)
-export ASSETHUTCH_URL=https://…   # only when not using AssetHutch cloud
+export ASSET_HUTCH_API_KEY=ah_…    # Dashboard → API keys (project-scoped)
+export ASSET_HUTCH_URL=https://…   # only when not using AssetHutch cloud
 ```
 
 ## The API key is server side
@@ -42,7 +42,7 @@ browser ────────────────────────
 ## Client
 
 ```ts
-const hutch = new Assethutch({ apiKey, url, timeoutMs, fetch, userAgent })
+const hutch = new AssetHutch({ apiKey, url, timeoutMs, fetch, userAgent })
 
 await hutch.project()                    // storage status, policies, transforms
 await hutch.transforms()                 // the project's named image sizes
@@ -92,7 +92,7 @@ browser ────────────────────────
 ```
 
 Your server needs two routes. The [`assethutch` gem](https://github.com/assethutch/assethutch-ruby)
-mounts them for Rails (`mount Assethutch::Engine => "/assethutch"`); in anything else, wire them to
+mounts them for Rails (`mount AssetHutch::Engine => "/assethutch"`); in anything else, wire them to
 `createUpload` and `completeUpload` on the server client above.
 
 ```
@@ -111,7 +111,7 @@ defineUploadElement()
 
 ```html
 <form action="/users/1" method="post">
-  <assethutch-upload policy="avatars" name="user[avatar_file_id]" accept="image/*"></assethutch-upload>
+  <asset-hutch-upload policy="avatars" name="user[avatar_file_id]" accept="image/*"></asset-hutch-upload>
   <button>Save</button>
 </form>
 ```
@@ -125,10 +125,10 @@ form can't be posted. A failed upload clears the field rather than leaving a sta
 
 | | |
 | --- | --- |
-| Attributes | `policy` (required), `name`, `endpoint` (default `/assethutch/uploads`), `accept`, `disabled` |
+| Attributes | `policy` (required), `name`, `endpoint` (default `/asset_hutch/uploads`), `accept`, `disabled` |
 | Properties | `fileId`, `uploading` |
 | Methods | `abort()` |
-| Events | `assethutch:start`, `assethutch:progress` (`detail.percent`), `assethutch:complete` (`detail.file`), `assethutch:error` (`detail.error`) |
+| Events | `asset-hutch:start`, `asset-hutch:progress` (`detail.percent`), `asset-hutch:complete` (`detail.file`), `asset-hutch:error` (`detail.error`) |
 
 Events bubble and are composed, so you can listen on a container or on `document`.
 
@@ -153,7 +153,7 @@ is nearly always the cause.
 
 ## Errors
 
-Everything thrown extends `AssethutchError`. API failures carry a stable `code`, the `status`, and
+Everything thrown extends `AssetHutchError`. API failures carry a stable `code`, the `status`, and
 any `details`. Match on `code` or the class, never the message.
 
 | Class | When |
