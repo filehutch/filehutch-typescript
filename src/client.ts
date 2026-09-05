@@ -1,28 +1,28 @@
 import { ConfigurationError, ConnectionError, buildApiError } from "./errors.js"
 import { toCreatedUpload, toFile, toManifestPage, toProject, toTransform } from "./mappers.js"
 import type {
-  AssetHutchFile, ClientOptions, CreateUploadParams, CreatedUpload, DeliveryUrl, FileId,
+  FileHutchFile, ClientOptions, CreateUploadParams, CreatedUpload, DeliveryUrl, FileId,
   Project, SignedUrlParams, Transform, TransformUrlParams, UploadAuthorization, UploadParams, ConfigApply, ConfigOptions, ConfigPlan, ManifestPage, ManifestParams, ProjectConfig
 } from "./types.js"
 
 const VERSION = "0.1.0"
-const DEFAULT_URL = "https://api.assethutch.com"
+const DEFAULT_URL = "https://api.filehutch.com"
 const ID_PATTERN = /^[a-z]+_[0-9A-Za-z]{20}$/
 
 /** Bytes this SDK can PUT straight to storage. */
 export type UploadSource = Uint8Array | ArrayBuffer | Blob | string
 
 /**
- * Server-side client for the AssetHutch v1 API.
+ * Server-side client for the FileHutch v1 API.
  *
  * The API key is project-scoped and must stay on your server. Browsers upload
  * through your own endpoints, which call this client — see the README.
  *
- *   const hutch = new AssetHutch({ apiKey: process.env.ASSET_HUTCH_API_KEY })
+ *   const hutch = new FileHutch({ apiKey: process.env.FILE_HUTCH_API_KEY })
  *   const file = await hutch.upload(bytes, { policy: "avatars", filename: "me.png" })
  *   file.id // => "file_8fK2…" — the only thing you store
  */
-export class AssetHutch {
+export class FileHutch {
   readonly url: string
   readonly timeoutMs: number
   private readonly apiKey: string
@@ -30,11 +30,11 @@ export class AssetHutch {
   private readonly userAgent: string
 
   constructor(options: ClientOptions = {}) {
-    const apiKey = options.apiKey ?? envVar("ASSET_HUTCH_API_KEY")
+    const apiKey = options.apiKey ?? envVar("FILE_HUTCH_API_KEY")
     if (!apiKey) {
-      throw new ConfigurationError("No API key. Pass apiKey, or set ASSET_HUTCH_API_KEY.")
+      throw new ConfigurationError("No API key. Pass apiKey, or set FILE_HUTCH_API_KEY.")
     }
-    const url = options.url ?? envVar("ASSET_HUTCH_URL") ?? DEFAULT_URL
+    const url = options.url ?? envVar("FILE_HUTCH_URL") ?? DEFAULT_URL
     try {
       new URL(url)
     } catch {
@@ -44,7 +44,7 @@ export class AssetHutch {
     this.apiKey = apiKey
     this.url = url.replace(/\/+$/, "")
     this.timeoutMs = options.timeoutMs ?? 30_000
-    this.userAgent = ["asset-hutch-ts/" + VERSION, options.userAgent].filter(Boolean).join(" ")
+    this.userAgent = ["filehutch-ts/" + VERSION, options.userAgent].filter(Boolean).join(" ")
 
     const impl = options.fetch ?? globalThis.fetch
     if (!impl) throw new ConfigurationError("No global fetch. Use Node 18+, or pass a fetch implementation.")
@@ -91,7 +91,7 @@ export class AssetHutch {
 
   // -- Files -------------------------------------------------------------------
 
-  async file(id: FileId): Promise<AssetHutchFile> {
+  async file(id: FileId): Promise<FileHutchFile> {
     return toFile((await this.request("GET", `/api/v1/files/${this.pathId(id)}`)).file)
   }
 
@@ -105,7 +105,7 @@ export class AssetHutch {
     }))
   }
 
-  async completeUpload(id: FileId): Promise<AssetHutchFile> {
+  async completeUpload(id: FileId): Promise<FileHutchFile> {
     return toFile((await this.request("POST", `/api/v1/uploads/${this.pathId(id)}/complete`)).file)
   }
 
@@ -141,9 +141,9 @@ export class AssetHutch {
 
   /**
    * Request an upload, PUT the bytes straight to storage, and complete it.
-   * The bytes never pass through AssetHutch's control plane.
+   * The bytes never pass through FileHutch's control plane.
    */
-  async upload(source: UploadSource, params: UploadParams): Promise<AssetHutchFile> {
+  async upload(source: UploadSource, params: UploadParams): Promise<FileHutchFile> {
     const body = await toBytes(source)
     const contentType = params.contentType ?? guessContentType(params.filename)
     const { upload } = await this.createUpload({
@@ -157,7 +157,7 @@ export class AssetHutch {
     return this.completeUpload(upload.fileId)
   }
 
-  /** PUTs bytes to the storage URL in an authorization. Never touches an AssetHutch endpoint. */
+  /** PUTs bytes to the storage URL in an authorization. Never touches an FileHutch endpoint. */
   async putToStorage(upload: UploadAuthorization, body: Uint8Array): Promise<true> {
     let response: Response
     try {
@@ -233,7 +233,7 @@ export class AssetHutch {
   private pathId(id: FileId): string {
     const value = typeof id === "string" ? id : String(id)
     if (!ID_PATTERN.test(value)) {
-      throw new ConfigurationError(`Expected an AssetHutch id, got ${JSON.stringify(id)}`)
+      throw new ConfigurationError(`Expected an FileHutch id, got ${JSON.stringify(id)}`)
     }
     return encodeURIComponent(value)
   }

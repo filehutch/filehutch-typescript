@@ -1,14 +1,14 @@
-# @assethutch/sdk
+# @filehutch/sdk
 
-TypeScript client for [AssetHutch](https://assethutch.com), file infrastructure for apps that
-aren't Netflix. Your app persists an opaque file id (`file_…`). AssetHutch owns uploads, private
-files, signed URLs, delivery, and named image transforms. Your storage, or AssetHutch's, sits
+TypeScript client for [FileHutch](https://filehutch.com), file infrastructure for apps that
+aren't Netflix. Your app persists an opaque file id (`file_…`). FileHutch owns uploads, private
+files, signed URLs, delivery, and named image transforms. Your storage, or FileHutch's, sits
 behind it.
 
 ```ts
-import { AssetHutch } from "@assethutch/sdk"
+import { FileHutch } from "@filehutch/sdk"
 
-const hutch = new AssetHutch({ apiKey: process.env.ASSET_HUTCH_API_KEY })
+const hutch = new FileHutch({ apiKey: process.env.FILE_HUTCH_API_KEY })
 
 const file = await hutch.upload(bytes, { policy: "avatars", filename: "me.png" })
 file.id                    // => "file_8fK2…"  ← the only thing you store
@@ -20,29 +20,29 @@ No runtime dependencies. Node 18+ (uses the global `fetch`), and any runtime tha
 ## Install
 
 ```sh
-npm install @assethutch/sdk
+npm install @filehutch/sdk
 ```
 
 ```sh
-export ASSET_HUTCH_API_KEY=ah_…    # Dashboard → API keys (project-scoped)
-export ASSET_HUTCH_URL=https://…   # only when not using AssetHutch cloud
+export FILE_HUTCH_API_KEY=fh_…    # Dashboard → API keys (project-scoped)
+export FILE_HUTCH_URL=https://…   # only when not using FileHutch cloud
 ```
 
 ## The API key is server side
 
 The key is scoped to a project and can upload, sign, and delete. **Never ship it to a browser.**
 Browser uploads go through your own endpoints, which hold the key and call this client — the same
-shape the Rails engine in the `asset_hutch` gem provides:
+shape the Rails engine in the `file_hutch` gem provides:
 
 ```
-browser → your server (holds the key) → AssetHutch     two small control-plane calls
+browser → your server (holds the key) → FileHutch     two small control-plane calls
 browser ────────────────────────────→ storage          the bytes, directly
 ```
 
 ## Client
 
 ```ts
-const hutch = new AssetHutch({ apiKey, url, timeoutMs, fetch, userAgent })
+const hutch = new FileHutch({ apiKey, url, timeoutMs, fetch, userAgent })
 
 await hutch.project()                    // storage status, policies, transforms
 await hutch.transforms()                 // the project's named image sizes
@@ -68,7 +68,7 @@ because the keys are yours and not ours: `metadata`, and the keys of `file.trans
 
 ## Image transforms
 
-Transforms are **named** in the AssetHutch dashboard — `avatar`, `thumb`, `hero` — and your code
+Transforms are **named** in the FileHutch dashboard — `avatar`, `thumb`, `hero` — and your code
 only ever says the name. No width, no format, no provider URL syntax, so resizing every avatar in
 your app is one dashboard edit and no deploy.
 
@@ -83,16 +83,16 @@ a `TransformsUnsupportedError` whose message names what to set up — never a UR
 
 ## Browser uploads
 
-`@assethutch/sdk/browser` is the other half: it never sees the API key. Two small JSON calls go to
+`@filehutch/sdk/browser` is the other half: it never sees the API key. Two small JSON calls go to
 *your* server, which holds the key, and the bytes go straight to storage.
 
 ```
-browser → your server (holds the key) → AssetHutch     two control-plane calls
+browser → your server (holds the key) → FileHutch     two control-plane calls
 browser ────────────────────────────→ storage          the bytes
 ```
 
-Your server needs two routes. The [`asset_hutch` gem](https://github.com/assethutch/assethutch-ruby)
-mounts them for Rails (`mount AssetHutch::Engine => "/asset_hutch"`); in anything else, wire them to
+Your server needs two routes. The [`file_hutch` gem](https://github.com/filehutch/filehutch-ruby)
+mounts them for Rails (`mount FileHutch::Engine => "/file_hutch"`); in anything else, wire them to
 `createUpload` and `completeUpload` on the server client above.
 
 ```
@@ -105,13 +105,13 @@ POST <endpoint>/:id/complete                                             → {fi
 A custom element, so the same tag works in React, Vue, Svelte, Hotwire, or a plain `.html` file.
 
 ```ts
-import { defineUploadElement } from "@assethutch/sdk/browser"
+import { defineUploadElement } from "@filehutch/sdk/browser"
 defineUploadElement()
 ```
 
 ```html
 <form action="/users/1" method="post">
-  <asset-hutch-upload policy="avatars" name="user[avatar_file_id]" accept="image/*"></asset-hutch-upload>
+  <filehutch-upload policy="avatars" name="user[avatar_file_id]" accept="image/*"></filehutch-upload>
   <button>Save</button>
 </form>
 ```
@@ -125,17 +125,17 @@ form can't be posted. A failed upload clears the field rather than leaving a sta
 
 | | |
 | --- | --- |
-| Attributes | `policy` (required), `name`, `endpoint` (default `/asset_hutch/uploads`), `accept`, `disabled` |
+| Attributes | `policy` (required), `name`, `endpoint` (default `/file_hutch/uploads`), `accept`, `disabled` |
 | Properties | `fileId`, `uploading` |
 | Methods | `abort()` |
-| Events | `asset-hutch:start`, `asset-hutch:progress` (`detail.percent`), `asset-hutch:complete` (`detail.file`), `asset-hutch:error` (`detail.error`) |
+| Events | `filehutch:start`, `filehutch:progress` (`detail.percent`), `filehutch:complete` (`detail.file`), `filehutch:error` (`detail.error`) |
 
 Events bubble and are composed, so you can listen on a container or on `document`.
 
 ### Or just the function
 
 ```ts
-import { directUpload } from "@assethutch/sdk/browser"
+import { directUpload } from "@filehutch/sdk/browser"
 
 const file = await directUpload(input.files[0], {
   policy: "avatars",
@@ -172,18 +172,18 @@ export path if you ever want to leave.
 
 ## Webhooks
 
-Server side only (`node:crypto`). AssetHutch signs every delivery with
-`AssetHutch-Signature: t=<unix>,v1=<hex>` where
+Server side only (`node:crypto`). FileHutch signs every delivery with
+`FileHutch-Signature: t=<unix>,v1=<hex>` where
 `v1 = HMAC-SHA256(secret, "<t>.<body>")`. Verify against the raw body, then
 deduplicate on the event `id` (deliveries are at-least-once):
 
 ```ts
-import { constructEvent, SignatureVerificationError } from "@assethutch/sdk/webhooks"
+import { constructEvent, SignatureVerificationError } from "@filehutch/sdk/webhooks"
 
 export async function POST(request: Request) {
   const body = await request.text()
   try {
-    const event = constructEvent(body, request.headers.get("AssetHutch-Signature"), process.env.ASSET_HUTCH_WEBHOOK_SECRET!)
+    const event = constructEvent(body, request.headers.get("FileHutch-Signature"), process.env.FILE_HUTCH_WEBHOOK_SECRET!)
     if (event.type === "file.created") await markReady(event.data.file!.id)
     return new Response(null, { status: 200 })
   } catch (error) {
@@ -197,7 +197,7 @@ Signatures older than five minutes are rejected; pass `{ tolerance }` to change 
 
 ## Errors
 
-Everything thrown extends `AssetHutchError`. API failures carry a stable `code`, the `status`, and
+Everything thrown extends `FileHutchError`. API failures carry a stable `code`, the `status`, and
 any `details`. Match on `code` or the class, never the message.
 
 | Class | When |
@@ -214,11 +214,11 @@ any `details`. Match on `code` or the class, never the message.
 | `PlanLimitError` | 402: the team is out of storage or projects on its plan |
 | `TransformError` → `TransformsUnsupportedError` | unknown transform or non-image; storage that cannot render |
 | `UploadError` | storage rejected the PUT, upload expired or incomplete, size mismatch |
-| `StorageError` | AssetHutch could not reach the bucket |
+| `StorageError` | FileHutch could not reach the bucket |
 | `RateLimitError`, `ServerError` | 429, 5xx |
 
 ```ts
-import { PolicyError, TransformsUnsupportedError } from "@assethutch/sdk"
+import { PolicyError, TransformsUnsupportedError } from "@filehutch/sdk"
 
 try {
   await hutch.upload(bytes, { policy: "avatars", filename: "huge.png" })
@@ -238,7 +238,7 @@ git tag v0.1.0 && git push origin v0.1.0
 
 The release workflow refuses a tag that disagrees with `package.json` before building anything,
 runs the suite, and publishes with a provenance attestation so the tarball can be traced to the
-commit it was built from. It needs an `NPM_TOKEN` secret with publish rights on the `@assethutch`
+commit it was built from. It needs an `NPM_TOKEN` secret with publish rights on the `@filehutch`
 scope.
 
 ## Development

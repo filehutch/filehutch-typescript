@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { computeSignature, constructEvent, SignatureVerificationError, verifySignature } from "../src/webhooks.js"
-import { AssetHutchError } from "../src/errors.js"
+import { FileHutchError } from "../src/errors.js"
 
 const SECRET = "whsec_test"
 const BODY = '{"id":"whd_1","object":"event","type":"file.created","data":{"file":{"id":"file_1"}}}'
@@ -31,6 +31,6 @@ test("malformed input fails closed", () => {
   assert.throws(() => verifySignature(BODY, header(), "", { now: NOW }), /secret is missing/)
 })
 
-test("the error is an AssetHutchError", () => {
-  assert.ok(new SignatureVerificationError("x") instanceof AssetHutchError)
+test("the error is an FileHutchError", () => {
+  assert.ok(new SignatureVerificationError("x") instanceof FileHutchError)
 })

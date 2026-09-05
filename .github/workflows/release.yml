@@ -1,7 +1,7 @@
 name: Release
 
 # Tag the version you are releasing, e.g. `git tag v0.1.0 && git push origin v0.1.0`.
-# Needs an NPM_TOKEN secret with publish rights on the @assethutch scope.
+# Needs an NPM_TOKEN secret with publish rights on the @filehutch scope.
 on:
   push:
     tags: [ "v*" ]

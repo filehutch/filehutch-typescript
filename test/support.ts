@@ -1,9 +1,9 @@
 import type { ClientOptions } from "../src/types.js"
 
-export const BASE = "https://asset-hutch.test"
+export const BASE = "https://filehutch.test"
 export const STORAGE = "https://bucket.storage.test"
 export const FILE_ID = "file_abcdefghij0123456789"
-export const API_KEY = "ah_testTESTtestTESTtestTESTtestTESTtestTEST"
+export const API_KEY = "fh_testTESTtestTESTtestTESTtestTESTtestTEST"
 
 export interface Recorded {
   url: string

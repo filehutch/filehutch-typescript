@@ -2,10 +2,10 @@
  * Browser-side direct upload.
  *
  * The API key never reaches the browser. Two small JSON calls go to *your*
- * server — the endpoints the AssetHutch Rails engine mounts, or the equivalent
+ * server — the endpoints the FileHutch Rails engine mounts, or the equivalent
  * two routes in any other framework — and the bytes go straight to storage.
  *
- *   browser → your server (holds the key) → AssetHutch     two control-plane calls
+ *   browser → your server (holds the key) → FileHutch     two control-plane calls
  *   browser ────────────────────────────→ storage          the bytes
  */
 
@@ -36,7 +36,7 @@ export interface UploadedFile {
 export interface DirectUploadOptions {
   /** Your app's upload endpoint. Defaults to the Rails engine's mount point. */
   url?: string
-  /** Upload policy name, as defined in the AssetHutch dashboard. */
+  /** Upload policy name, as defined in the FileHutch dashboard. */
   policy: string
   /** Sent as X-CSRF-Token. Read from <meta name="csrf-token"> when omitted. */
   csrfToken?: string
@@ -46,7 +46,7 @@ export interface DirectUploadOptions {
   signal?: AbortSignal
 }
 
-const DEFAULT_URL = "/asset_hutch/uploads"
+const DEFAULT_URL = "/file_hutch/uploads"
 
 /**
  * Runs the three steps and resolves with the ready file. Framework-neutral:

@@ -1,4 +1,4 @@
-/** Every identifier AssetHutch hands out is opaque. `file_…` is the only one your app stores. */
+/** Every identifier FileHutch hands out is opaque. `file_…` is the only one your app stores. */
 export type FileId = string
 
 export type Visibility = "public" | "private"
@@ -8,7 +8,7 @@ export type FileStatus = "pending" | "ready" | "failed" | "deleted"
 export type Fit = "cover" | "contain" | "scale_down" | "crop" | "pad"
 export type Format = "auto" | "webp" | "avif" | "jpeg" | "png"
 
-export interface AssetHutchFile {
+export interface FileHutchFile {
   id: FileId
   object: "file"
   filename: string
@@ -162,7 +162,7 @@ export interface ManifestStorage {
   bucket: string | null
   endpoint: string | null
   region: string | null
-  /** The object key. With the bucket and your own credentials this finds the bytes without AssetHutch. */
+  /** The object key. With the bucket and your own credentials this finds the bytes without FileHutch. */
   key: string
 }
 
@@ -207,7 +207,7 @@ export interface UploadAuthorization {
 
 export interface CreatedUpload {
   upload: UploadAuthorization
-  file: AssetHutchFile
+  file: FileHutchFile
 }
 
 /** `expiresAt` is null for public files, which are delivered from a stable URL. */
@@ -219,7 +219,7 @@ export interface DeliveryUrl {
 export interface ClientOptions {
   /** Project-scoped key from Dashboard → API keys. Server side only. */
   apiKey?: string
-  /** Defaults to ASSET_HUTCH_URL, then https://api.assethutch.com. */
+  /** Defaults to FILE_HUTCH_URL, then https://api.filehutch.com. */
   url?: string
   /** Per-request timeout in milliseconds. Default 30000. */
   timeoutMs?: number
