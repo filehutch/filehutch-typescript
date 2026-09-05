@@ -19,6 +19,7 @@ export interface AssetHutchFile {
   status: FileStatus
   metadata: Record<string, unknown>
   policy: string | null
+  environment: string | null
   storageConnectionId: string
   /** Stable delivery URL. Present only for ready public files. */
   url: string | null
@@ -59,16 +60,138 @@ export interface StorageConnection {
   status: "unverified" | "verified" | "failed"
 }
 
+export interface Environment {
+  id: string
+  name: string
+}
+
+export interface PlanLimits {
+  key: string
+  name: string
+  storageBytes: number
+  projectLimit: number | null
+}
+
+export interface Usage {
+  storageBytesUsed: number
+  projectsUsed: number
+}
+
 export interface Project {
   id: string
   object: "project"
   name: string
   teamId: string
+  /** The environment the API key is scoped to. */
+  environment: Environment | null
+  environments: string[]
   storageReady: boolean
   activeStorageConnection: StorageConnection | null
   uploadPolicies: UploadPolicy[]
   transforms: Transform[]
+  plan: PlanLimits | null
+  usage: Usage | null
   createdAt: string
+}
+
+// -- Declarative config -------------------------------------------------------
+// The file format is the API's; keys stay snake_case because people write them.
+
+export interface UploadConfig {
+  types?: string[]
+  /** Bytes, or a size like "10MB". */
+  max_size?: number | string
+  visibility?: Visibility
+}
+
+export interface TransformConfig {
+  width?: number
+  height?: number
+  fit?: Fit
+  quality?: number
+  format?: Format
+}
+
+export interface ProjectConfig {
+  uploads?: Record<string, UploadConfig>
+  transforms?: Record<string, TransformConfig>
+  environments?: string[]
+}
+
+export type ConfigResource = "upload_policy" | "transform" | "environment"
+export type ConfigAction = "create" | "update" | "delete" | "noop"
+
+export interface ConfigChange {
+  resource: ConfigResource
+  name: string
+  action: ConfigAction
+  from?: Record<string, unknown>
+  to?: Record<string, unknown>
+  /** attribute → [current, desired] for updates */
+  diff?: Record<string, [unknown, unknown]>
+}
+
+export interface ConfigPlan {
+  prune: boolean
+  changes: ConfigChange[]
+  summary: { create: number; update: number; delete: number; noop: number }
+}
+
+export interface ConfigApplyLine extends ConfigChange {
+  status: "applied" | "failed"
+  error?: string
+}
+
+export interface ConfigApply {
+  prune: boolean
+  results: ConfigApplyLine[]
+  summary: { applied: number; failed: number; noop: number }
+}
+
+export interface ConfigOptions {
+  /** Also delete what the config leaves out. Default false. */
+  prune?: boolean
+}
+
+// -- Manifest -----------------------------------------------------------------
+
+export interface ManifestStorage {
+  connectionId: string
+  mode: "managed" | "byo"
+  provider: string
+  bucket: string | null
+  endpoint: string | null
+  region: string | null
+  /** The object key. With the bucket and your own credentials this finds the bytes without AssetHutch. */
+  key: string
+}
+
+export interface ManifestEntry {
+  id: FileId
+  filename: string
+  contentType: string
+  byteSize: number
+  checksum: string | null
+  visibility: Visibility
+  status: FileStatus
+  metadata: Record<string, unknown>
+  policy: string | null
+  environment: string | null
+  storage: ManifestStorage
+  createdAt: string
+}
+
+export interface ManifestPage {
+  environment: string
+  generatedAt: string
+  files: ManifestEntry[]
+  hasMore: boolean
+  nextAfter: string | null
+}
+
+export interface ManifestParams {
+  after?: string
+  limit?: number
 }
 
 /** Everything the client needs to PUT bytes straight to storage. */

@@ -36,10 +36,14 @@ export class ApiError extends AssetHutchError {
 }
 
 export class AuthenticationError extends ApiError {}
+/** The key is valid but may not do this: a read-only key calling a write endpoint. */
+export class PermissionError extends AuthenticationError {}
 export class NotFoundError extends ApiError {}
 export class InvalidRequestError extends ApiError {}
 /** Content type or size the policy refuses, or a policy that doesn't exist. */
 export class PolicyError extends InvalidRequestError {}
+/** A declarative config the API refused: unknown key, bad size, bad name. */
+export class ConfigError extends InvalidRequestError {}
 export class StorageNotReadyError extends ApiError {}
 /** Not ready, already deleted, not public. */
 export class InvalidStateError extends ApiError {}
@@ -79,12 +83,16 @@ const BY_CODE: Record<string, ApiErrorClass> = {
   storage_error: StorageError,
   verification_failed: StorageError,
   plan_limit: PlanLimitError,
+  read_only_key: PermissionError,
+  invalid_config: ConfigError,
+  environment_not_found: InvalidRequestError,
+  not_verified: InvalidStateError,
 }
 
 const BY_STATUS: Record<number, ApiErrorClass> = {
   401: AuthenticationError,
   402: PlanLimitError,
-  403: AuthenticationError,
+  403: PermissionError,
   404: NotFoundError,
   409: InvalidStateError,
   410: InvalidStateError,
