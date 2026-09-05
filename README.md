@@ -32,7 +32,7 @@ export ASSET_HUTCH_URL=https://…   # only when not using AssetHutch cloud
 
 The key is scoped to a project and can upload, sign, and delete. **Never ship it to a browser.**
 Browser uploads go through your own endpoints, which hold the key and call this client — the same
-shape the Rails engine in the `assethutch` gem provides:
+shape the Rails engine in the `asset_hutch` gem provides:
 
 ```
 browser → your server (holds the key) → AssetHutch     two small control-plane calls
@@ -91,8 +91,8 @@ browser → your server (holds the key) → AssetHutch     two control-plane cal
 browser ────────────────────────────→ storage          the bytes
 ```
 
-Your server needs two routes. The [`assethutch` gem](https://github.com/assethutch/assethutch-ruby)
-mounts them for Rails (`mount AssetHutch::Engine => "/assethutch"`); in anything else, wire them to
+Your server needs two routes. The [`asset_hutch` gem](https://github.com/assethutch/assethutch-ruby)
+mounts them for Rails (`mount AssetHutch::Engine => "/asset_hutch"`); in anything else, wire them to
 `createUpload` and `completeUpload` on the server client above.
 
 ```
