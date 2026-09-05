@@ -9,6 +9,9 @@ export class AssetHutchError extends Error {
 /** No API key, or a URL that isn't one. Thrown before any request goes out. */
 export class ConfigurationError extends AssetHutchError {}
 
+/** A webhook body was not signed by AssetHutch with your endpoint's secret. */
+export class SignatureVerificationError extends AssetHutchError {}
+
 /** The request never got an answer: DNS, timeout, reset, abort. */
 export class ConnectionError extends AssetHutchError {
   readonly cause?: unknown

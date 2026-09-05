@@ -151,6 +151,31 @@ token is read from `<meta name="csrf-token">` unless you pass `csrfToken`. Failu
 bucket refuses the PUT, and `network`, whose message points at the bucket's CORS rules, since that
 is nearly always the cause.
 
+## Webhooks
+
+Server side only (`node:crypto`). AssetHutch signs every delivery with
+`AssetHutch-Signature: t=<unix>,v1=<hex>` where
+`v1 = HMAC-SHA256(secret, "<t>.<body>")`. Verify against the raw body, then
+deduplicate on the event `id` (deliveries are at-least-once):
+
+```ts
+import { constructEvent, SignatureVerificationError } from "@assethutch/sdk/webhooks"
+
+export async function POST(request: Request) {
+  const body = await request.text()
+  try {
+    const event = constructEvent(body, request.headers.get("AssetHutch-Signature"), process.env.ASSET_HUTCH_WEBHOOK_SECRET!)
+    if (event.type === "file.created") await markReady(event.data.file!.id)
+    return new Response(null, { status: 200 })
+  } catch (error) {
+    if (error instanceof SignatureVerificationError) return new Response(null, { status: 400 })
+    throw error
+  }
+}
+```
+
+Signatures older than five minutes are rejected; pass `{ tolerance }` to change that.
+
 ## Errors
 
 Everything thrown extends `AssetHutchError`. API failures carry a stable `code`, the `status`, and
