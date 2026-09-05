@@ -1,5 +1,5 @@
 import type {
-  AssethutchFile, CreatedUpload, Project, StorageConnection, Transform, UploadAuthorization, UploadPolicy,
+  AssetHutchFile, CreatedUpload, Project, StorageConnection, Transform, UploadAuthorization, UploadPolicy,
 } from "./types.js"
 
 // The API speaks snake_case. Converting it blindly would also rewrite keys that
@@ -8,7 +8,7 @@ import type {
 
 type Json = Record<string, any>
 
-export function toFile(data: Json): AssethutchFile {
+export function toFile(data: Json): AssetHutchFile {
   return {
     id: data.id,
     object: "file",

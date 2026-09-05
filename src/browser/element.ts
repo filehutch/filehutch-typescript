@@ -2,12 +2,12 @@ import { DirectUploadError, directUpload } from "./direct-upload.js"
 import type { UploadedFile } from "./direct-upload.js"
 
 /**
- * <assethutch-upload> — a file input that uploads straight to storage and puts
+ * <asset-hutch-upload> — a file input that uploads straight to storage and puts
  * the resulting file id in a hidden field your form submits.
  *
  *   <form action="/users/1" method="post">
- *     <assethutch-upload policy="avatars" name="user[avatar_file_id]" accept="image/*">
- *     </assethutch-upload>
+ *     <asset-hutch-upload policy="avatars" name="user[avatar_file_id]" accept="image/*">
+ *     </asset-hutch-upload>
  *     <button>Save</button>
  *   </form>
  *
@@ -15,12 +15,12 @@ import type { UploadedFile } from "./direct-upload.js"
  * React, Vue, Svelte, Hotwire, or a plain .html file. It builds its children in
  * the light DOM, so your own CSS styles them exactly as it would any input.
  *
- * Events bubble and are composed: assethutch:start, assethutch:progress
- * (detail.percent), assethutch:complete (detail.file), assethutch:error
+ * Events bubble and are composed: asset-hutch:start, asset-hutch:progress
+ * (detail.percent), asset-hutch:complete (detail.file), asset-hutch:error
  * (detail.error).
  */
-export class AssethutchUploadElement extends HTMLElement {
-  static readonly tagName = "assethutch-upload"
+export class AssetHutchUploadElement extends HTMLElement {
+  static readonly tagName = "asset-hutch-upload"
   static get observedAttributes() {
     return ["accept", "disabled", "multiple"]
   }
@@ -78,7 +78,7 @@ export class AssethutchUploadElement extends HTMLElement {
     this.hiddenField = document.createElement("input")
     this.hiddenField.type = "hidden"
     // Without a name the form submits nothing, which is the useful default for
-    // callers reading .fileId or listening for assethutch:complete instead.
+    // callers reading .fileId or listening for asset-hutch:complete instead.
     if (this.hasAttribute("name")) this.hiddenField.name = this.getAttribute("name")!
     this.appendChild(this.hiddenField)
 
@@ -102,7 +102,7 @@ export class AssethutchUploadElement extends HTMLElement {
 
     const policy = this.getAttribute("policy")
     if (!policy) {
-      this.fail(new DirectUploadError("<assethutch-upload> needs a policy attribute", { code: "invalid" }))
+      this.fail(new DirectUploadError("<asset-hutch-upload> needs a policy attribute", { code: "invalid" }))
       return
     }
 
@@ -156,20 +156,20 @@ export class AssethutchUploadElement extends HTMLElement {
 
   private note(message: string, isError = false) {
     this.status.textContent = message
-    this.status.dataset.assethutchState = isError ? "error" : "ok"
+    this.status.dataset.assetHutchState = isError ? "error" : "ok"
   }
 
   private emit(name: string, detail: Record<string, unknown>) {
-    this.dispatchEvent(new CustomEvent(`assethutch:${name}`, { detail, bubbles: true, composed: true }))
+    this.dispatchEvent(new CustomEvent(`asset-hutch:${name}`, { detail, bubbles: true, composed: true }))
   }
 }
 
 /**
- * Registers <assethutch-upload>. Safe to call more than once, and a no-op when
+ * Registers <asset-hutch-upload>. Safe to call more than once, and a no-op when
  * there is no custom element registry (server rendering, tests).
  */
-export function defineUploadElement(tagName: string = AssethutchUploadElement.tagName): void {
+export function defineUploadElement(tagName: string = AssetHutchUploadElement.tagName): void {
   if (typeof customElements === "undefined") return
   if (customElements.get(tagName)) return
-  customElements.define(tagName, AssethutchUploadElement)
+  customElements.define(tagName, AssetHutchUploadElement)
 }

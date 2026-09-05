@@ -1,6 +1,6 @@
 import type { ClientOptions } from "../src/types.js"
 
-export const BASE = "https://assethutch.test"
+export const BASE = "https://asset-hutch.test"
 export const STORAGE = "https://bucket.storage.test"
 export const FILE_ID = "file_abcdefghij0123456789"
 export const API_KEY = "ah_testTESTtestTESTtestTESTtestTESTtestTEST"
