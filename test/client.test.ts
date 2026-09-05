@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import { AssetHutch } from "../src/client.js"
 import {
   AuthenticationError, ConfigurationError, ConnectionError, InvalidStateError, NotFoundError,
-  PolicyError, RateLimitError, ServerError, TransformError, TransformsUnsupportedError,
+  PlanLimitError, PolicyError, RateLimitError, ServerError, TransformError, TransformsUnsupportedError,
 } from "../src/errors.js"
 import { BASE, FILE_ID, STORAGE, errorJson, fileJson, options, projectJson, stubFetch, transformsJson } from "./support.js"
 
@@ -155,6 +155,7 @@ test("error codes map to typed errors, ahead of status", async () => {
     ["not_ready", 409, InvalidStateError],
     ["transform_not_found", 422, TransformError],
     ["transforms_unsupported", 409, TransformsUnsupportedError],
+    ["plan_limit", 402, PlanLimitError],
   ]
 
   for (const [code, status, Klass] of cases) {

@@ -47,6 +47,8 @@ export class TransformsUnsupportedError extends TransformError {}
 export class UploadError extends ApiError {}
 /** AssetHutch could not reach the bucket. */
 export class StorageError extends ApiError {}
+/** The team's plan is out of storage or projects. The message names the plan and what to do. */
+export class PlanLimitError extends ApiError {}
 export class RateLimitError extends ApiError {}
 export class ServerError extends ApiError {}
 
@@ -73,10 +75,12 @@ const BY_CODE: Record<string, ApiErrorClass> = {
   size_mismatch: UploadError,
   storage_error: StorageError,
   verification_failed: StorageError,
+  plan_limit: PlanLimitError,
 }
 
 const BY_STATUS: Record<number, ApiErrorClass> = {
   401: AuthenticationError,
+  402: PlanLimitError,
   403: AuthenticationError,
   404: NotFoundError,
   409: InvalidStateError,
