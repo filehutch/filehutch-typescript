@@ -151,6 +151,25 @@ token is read from `<meta name="csrf-token">` unless you pass `csrfToken`. Failu
 bucket refuses the PUT, and `network`, whose message points at the bucket's CORS rules, since that
 is nearly always the cause.
 
+## Declarative config and the manifest
+
+A project's upload policies, transforms and environments are a file the API understands.
+Plan first, then apply; nothing is deleted unless you ask.
+
+```ts
+const config = await hutch.config()
+config.uploads!.exports = { types: ["text/csv"], max_size: "1MB" }
+
+const plan = await hutch.planConfig(config)        // a read-only key can do this
+for (const change of plan.changes) if (change.action !== "noop") console.log(change.action, change.resource, change.name)
+
+const result = await hutch.applyConfig(config)     // needs a write key
+if (result.summary.failed > 0) console.error(result.results.filter((r) => r.status === "failed"))
+```
+
+`hutch.manifest({ after, limit })` pages through every ready file with its object key: the
+export path if you ever want to leave.
+
 ## Webhooks
 
 Server side only (`node:crypto`). AssetHutch signs every delivery with
@@ -190,6 +209,8 @@ any `details`. Match on `code` or the class, never the message.
 | `InvalidRequestError` → `PolicyError` | bad params; content type or size the policy refuses |
 | `StorageNotReadyError` | the project has no verified storage |
 | `InvalidStateError` | not ready, already deleted, not public |
+| `PermissionError` | 403 / `read_only_key`: the key is read-only and this changes something |
+| `ConfigError` | `invalid_config`: the config file has an unknown key, bad size or bad name |
 | `PlanLimitError` | 402: the team is out of storage or projects on its plan |
 | `TransformError` → `TransformsUnsupportedError` | unknown transform or non-image; storage that cannot render |
 | `UploadError` | storage rejected the PUT, upload expired or incomplete, size mismatch |

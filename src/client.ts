@@ -1,8 +1,8 @@
 import { ConfigurationError, ConnectionError, buildApiError } from "./errors.js"
-import { toCreatedUpload, toFile, toProject, toTransform } from "./mappers.js"
+import { toCreatedUpload, toFile, toManifestPage, toProject, toTransform } from "./mappers.js"
 import type {
   AssetHutchFile, ClientOptions, CreateUploadParams, CreatedUpload, DeliveryUrl, FileId,
-  Project, SignedUrlParams, Transform, TransformUrlParams, UploadAuthorization, UploadParams,
+  Project, SignedUrlParams, Transform, TransformUrlParams, UploadAuthorization, UploadParams, ConfigApply, ConfigOptions, ConfigPlan, ManifestPage, ManifestParams, ProjectConfig
 } from "./types.js"
 
 const VERSION = "0.1.0"
@@ -62,6 +62,34 @@ export class AssetHutch {
     const body = await this.request("GET", "/api/v1/transforms")
     return (body.transforms ?? []).map(toTransform)
   }
+
+  // -- Declarative config -----------------------------------------------------
+
+  /** The project as a config: uploads, transforms, environments. Edit it and hand it to planConfig. */
+  async config(): Promise<ProjectConfig> {
+    return (await this.request("GET", "/api/v1/config")).config
+  }
+
+  /** What applyConfig would change. Touches nothing; a read-only key is enough. */
+  async planConfig(config: ProjectConfig, options: ConfigOptions = {}): Promise<ConfigPlan> {
+    return (await this.request("POST", "/api/v1/config/plan", { config, prune: options.prune === true })).plan
+  }
+
+  /** Make the project match the config, one change at a time. Nothing is deleted unless prune is true. */
+  async applyConfig(config: ProjectConfig, options: ConfigOptions = {}): Promise<ConfigApply> {
+    return (await this.request("POST", "/api/v1/config/apply", { config, prune: options.prune === true })).apply
+  }
+
+  /** One page of the export: every ready file in this key's environment with its object key. */
+  async manifest(params: ManifestParams = {}): Promise<ManifestPage> {
+    const query = new URLSearchParams()
+    if (params.after) query.set("after", params.after)
+    if (params.limit) query.set("limit", String(params.limit))
+    const suffix = query.size > 0 ? `?${query}` : ""
+    return toManifestPage(await this.request("GET", `/api/v1/manifest${suffix}`))
+  }
+
+  // -- Files -------------------------------------------------------------------
 
   async file(id: FileId): Promise<AssetHutchFile> {
     return toFile((await this.request("GET", `/api/v1/files/${this.pathId(id)}`)).file)
