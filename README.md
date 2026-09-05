@@ -165,6 +165,7 @@ any `details`. Match on `code` or the class, never the message.
 | `InvalidRequestError` → `PolicyError` | bad params; content type or size the policy refuses |
 | `StorageNotReadyError` | the project has no verified storage |
 | `InvalidStateError` | not ready, already deleted, not public |
+| `PlanLimitError` | 402: the team is out of storage or projects on its plan |
 | `TransformError` → `TransformsUnsupportedError` | unknown transform or non-image; storage that cannot render |
 | `UploadError` | storage rejected the PUT, upload expired or incomplete, size mismatch |
 | `StorageError` | AssetHutch could not reach the bucket |
