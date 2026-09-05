@@ -1,12 +1,12 @@
-// Server-side only: verifies the signature AssetHutch puts on every webhook
-// delivery. Import from "@assethutch/sdk/webhooks"; it uses node:crypto.
+// Server-side only: verifies the signature FileHutch puts on every webhook
+// delivery. Import from "@filehutch/sdk/webhooks"; it uses node:crypto.
 import { createHmac, timingSafeEqual } from "node:crypto"
 import { SignatureVerificationError } from "./errors.js"
-import type { AssetHutchFile, StorageConnection } from "./types.js"
+import type { FileHutchFile, StorageConnection } from "./types.js"
 
 export { SignatureVerificationError }
 
-export const SIGNATURE_HEADER = "AssetHutch-Signature"
+export const SIGNATURE_HEADER = "FileHutch-Signature"
 export const DEFAULT_TOLERANCE = 300
 
 export interface WebhookEvent {
@@ -17,7 +17,7 @@ export interface WebhookEvent {
   created_at: string
   project_id: string
   environment: string | null
-  data: { file?: AssetHutchFile; storage_connection?: StorageConnection }
+  data: { file?: FileHutchFile; storage_connection?: StorageConnection }
 }
 
 export interface VerifyOptions {

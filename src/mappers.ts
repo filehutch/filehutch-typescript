@@ -1,5 +1,5 @@
 import type {
-  AssetHutchFile, CreatedUpload, ManifestEntry, ManifestPage, Project, StorageConnection, Transform,
+  FileHutchFile, CreatedUpload, ManifestEntry, ManifestPage, Project, StorageConnection, Transform,
   UploadAuthorization, UploadPolicy,
 } from "./types.js"
 
@@ -9,7 +9,7 @@ import type {
 
 type Json = Record<string, any>
 
-export function toFile(data: Json): AssetHutchFile {
+export function toFile(data: Json): FileHutchFile {
   return {
     id: data.id,
     object: "file",

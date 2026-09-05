@@ -1,7 +1,7 @@
 {
-  "name": "@assethutch/sdk",
+  "name": "@filehutch/sdk",
   "version": "0.1.0",
-  "description": "TypeScript client for AssetHutch. Your app persists an opaque file id; AssetHutch owns uploads, delivery and transforms.",
+  "description": "TypeScript client for FileHutch. Your app persists an opaque file id; FileHutch owns uploads, delivery and transforms.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -35,13 +35,13 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^22.10.0",
-    "typescript": "^5.7.2",
     "jsdom": "^25.0.1",
-    "@types/jsdom": "^21.1.7"
+    "typescript": "^5.7.2"
   },
   "keywords": [
-    "assethutch",
+    "filehutch",
     "file-upload",
     "s3",
     "r2",
@@ -49,10 +49,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/assethutch/assethutch-typescript.git"
+    "url": "git+https://github.com/filehutch/filehutch-typescript.git"
   },
   "bugs": {
-    "url": "https://github.com/assethutch/assethutch-typescript/issues"
+    "url": "https://github.com/filehutch/filehutch-typescript/issues"
   },
-  "homepage": "https://github.com/assethutch/assethutch-typescript#readme"
+  "homepage": "https://github.com/filehutch/filehutch-typescript#readme"
 }

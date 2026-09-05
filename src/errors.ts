@@ -1,5 +1,5 @@
 /** Base for everything this SDK throws. */
-export class AssetHutchError extends Error {
+export class FileHutchError extends Error {
   constructor(message: string) {
     super(message)
     this.name = new.target.name
@@ -7,13 +7,13 @@ export class AssetHutchError extends Error {
 }
 
 /** No API key, or a URL that isn't one. Thrown before any request goes out. */
-export class ConfigurationError extends AssetHutchError {}
+export class ConfigurationError extends FileHutchError {}
 
-/** A webhook body was not signed by AssetHutch with your endpoint's secret. */
-export class SignatureVerificationError extends AssetHutchError {}
+/** A webhook body was not signed by FileHutch with your endpoint's secret. */
+export class SignatureVerificationError extends FileHutchError {}
 
 /** The request never got an answer: DNS, timeout, reset, abort. */
-export class ConnectionError extends AssetHutchError {
+export class ConnectionError extends FileHutchError {
   readonly cause?: unknown
   constructor(message: string, cause?: unknown) {
     super(message)
@@ -21,8 +21,8 @@ export class ConnectionError extends AssetHutchError {
   }
 }
 
-/** AssetHutch answered with an error. `code` is stable; match on it, not the message. */
-export class ApiError extends AssetHutchError {
+/** FileHutch answered with an error. `code` is stable; match on it, not the message. */
+export class ApiError extends FileHutchError {
   readonly code: string
   readonly status: number
   readonly details?: unknown
@@ -52,7 +52,7 @@ export class TransformError extends InvalidRequestError {}
 /** The project's storage cannot render transforms. The message says what to set up. */
 export class TransformsUnsupportedError extends TransformError {}
 export class UploadError extends ApiError {}
-/** AssetHutch could not reach the bucket. */
+/** FileHutch could not reach the bucket. */
 export class StorageError extends ApiError {}
 /** The team's plan is out of storage or projects. The message names the plan and what to do. */
 export class PlanLimitError extends ApiError {}
@@ -105,7 +105,7 @@ const BY_STATUS: Record<number, ApiErrorClass> = {
 export function buildApiError(status: number, body: unknown): ApiError {
   const error = (body as { error?: { code?: string; message?: string; details?: unknown } })?.error
   const code = error?.code ?? (status >= 500 ? "server_error" : "error")
-  const message = error?.message ?? `AssetHutch returned HTTP ${status}`
+  const message = error?.message ?? `FileHutch returned HTTP ${status}`
   const Klass = BY_CODE[code] ?? BY_STATUS[status] ?? (status >= 500 ? ServerError : ApiError)
   return new Klass(message, code, status, error?.details)
 }

@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom"
 
-export const ENDPOINT = "/asset_hutch/uploads"
+export const ENDPOINT = "/file_hutch/uploads"
 export const STORAGE = "https://bucket.storage.test/put"
 export const FILE_ID = "file_abcdefghij0123456789"
 
