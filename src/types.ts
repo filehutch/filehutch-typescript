@@ -235,11 +235,15 @@ export interface CreateUploadParams {
   contentType: string
   byteSize: number
   metadata?: Record<string, unknown>
+  /** MD5 of the bytes. FileHutch refuses the upload if what arrives differs. */
+  checksum?: string
 }
 
 export interface UploadParams {
   policy: string
   filename: string
+  /** Send an MD5 so a corrupted upload fails instead of completing. Default true. */
+  verify?: boolean
   contentType?: string
   metadata?: Record<string, unknown>
 }

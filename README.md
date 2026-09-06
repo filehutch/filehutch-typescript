@@ -11,6 +11,11 @@ import { FileHutch } from "@filehutch/sdk"
 const hutch = new FileHutch({ apiKey: process.env.FILE_HUTCH_API_KEY })
 
 const file = await hutch.upload(bytes, { policy: "avatars", filename: "me.png" })
+
+// An MD5 goes with the request, so FileHutch refuses the upload if what arrives is
+// not what left. Pass `verify: false` to skip it and check only the byte count.
+// Node only: Web Crypto has no MD5, so browser uploads via `@filehutch/sdk/browser`
+// are size-checked, the same as before.
 file.id                    // => "file_8fK2…"  ← the only thing you store
 file.transforms.avatar     // => a 200×200 URL, if the project defines "avatar"
 ```
