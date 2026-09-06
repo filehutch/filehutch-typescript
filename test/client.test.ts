@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FileHutch } from "../src/client.js"
@@ -121,6 +122,8 @@ test("upload runs the three steps and PUTs bytes straight to storage", async () 
   assert.equal(created.content_type, "image/png") // guessed from the filename
   assert.equal(created.byte_size, 3)
   assert.deepEqual(created.metadata, { order_id: "ord_1" })
+  assert.equal(created.checksum, createHash("md5").update(new Uint8Array([1, 2, 3])).digest("hex"),
+    "the MD5 has to describe the bytes actually sent")
   // The storage PUT carries the bucket's headers and no FileHutch credentials.
   assert.equal(calls[1]!.headers["Content-Type"], "image/png")
   assert.equal(calls[1]!.headers["Authorization"], undefined)
@@ -220,4 +223,26 @@ test("a trailing slash on the URL does not double up in paths", async () => {
   const { fetch, calls } = stubFetch({ [`GET ${BASE}/api/v1/project`]: { body: { project: projectJson() } } })
   await new FileHutch(options(fetch, { url: `${BASE}///` })).project()
   assert.equal(calls[0]!.url, `${BASE}/api/v1/project`)
+})
+
+test("verification can be turned off, and then nothing is claimed", async () => {
+  const { fetch, calls } = stubFetch({
+    [`POST ${BASE}/api/v1/uploads`]: {
+      body: {
+        upload: {
+          id: FILE_ID, object: "upload", file_id: FILE_ID, method: "PUT",
+          url: `${STORAGE}/${FILE_ID}?sig=1`, headers: {}, expires_at: "2099-01-01T00:00:00.000Z",
+        },
+        file: fileJson({ status: "pending" }),
+      },
+    },
+    [`PUT ${STORAGE}/${FILE_ID}?sig=1`]: { status: 200, text: "" },
+    [`POST ${BASE}/api/v1/uploads/${FILE_ID}/complete`]: { body: { file: fileJson({ status: "ready" }) } },
+  })
+
+  await new FileHutch(options(fetch)).upload(new Uint8Array([1, 2, 3]), {
+    policy: "avatars", filename: "me.png", verify: false,
+  })
+
+  assert.equal(JSON.parse(calls[0]!.body!).checksum, undefined)
 })

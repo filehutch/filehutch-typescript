@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { ConfigurationError, ConnectionError, buildApiError } from "./errors.js"
 import { toCreatedUpload, toFile, toManifestPage, toProject, toTransform } from "./mappers.js"
 import type {
@@ -101,6 +102,7 @@ export class FileHutch {
       filename: params.filename,
       content_type: params.contentType,
       byte_size: params.byteSize,
+      ...(params.checksum ? { checksum: params.checksum } : {}),
       ...(params.metadata && Object.keys(params.metadata).length ? { metadata: params.metadata } : {}),
     }))
   }
@@ -142,6 +144,9 @@ export class FileHutch {
   /**
    * Request an upload, PUT the bytes straight to storage, and complete it.
    * The bytes never pass through FileHutch's control plane.
+   *
+   * Sends an MD5 so FileHutch refuses the upload if what arrives is not what
+   * left. Pass `verify: false` to skip it, and only the byte count is checked.
    */
   async upload(source: UploadSource, params: UploadParams): Promise<FileHutchFile> {
     const body = await toBytes(source)
@@ -151,6 +156,7 @@ export class FileHutch {
       filename: params.filename,
       contentType,
       byteSize: body.byteLength,
+      ...(params.verify === false ? {} : { checksum: md5Hex(body) }),
       ...(params.metadata ? { metadata: params.metadata } : {}),
     })
     await this.putToStorage(upload, body)
@@ -285,4 +291,12 @@ async function safeText(response: Response): Promise<string> {
   } catch {
     return ""
   }
+}
+
+// Node only, like ./webhooks. Web Crypto has no MD5 — only the SHA family — so
+// the browser entry point uploads without a checksum rather than shipping a
+// hand-rolled digest into every bundle. FileHutch treats a missing checksum the
+// way it always did: the byte count is checked and nothing else.
+function md5Hex(bytes: Uint8Array): string {
+  return createHash("md5").update(bytes).digest("hex")
 }
