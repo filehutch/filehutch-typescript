@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# Cuts a release: checks the tree, runs the suite and the build, writes the
+# version and the changelog date, then commits, tags and pushes.
+#
+# The tag is what publishes. Pushing it starts the Release workflow, which
+# builds and publishes to npm through trusted publishing, so no token is
+# needed here or on your machine.
+#
+# npm will not attach a trusted publisher to a package that does not exist, so
+# the very first publish has to come from a laptop. This script refuses to tag
+# until that has happened, and prints the three commands that do it.
+#
+#   bin/release 0.2.0
+#   bin/release 0.2.0 --dry-run     # say what it would do, change nothing
+#   bin/release 0.2.0 --yes         # skip the confirmation
+
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+die() { echo "release: $*" >&2; exit 1; }
+step() { printf '\033[36m==>\033[0m %s\n' "$*"; }
+
+dry_run=false
+assume_yes=false
+version=""
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) dry_run=true ;;
+    --yes) assume_yes=true ;;
+    -*) die "unknown option $arg" ;;
+    *) version="$arg" ;;
+  esac
+done
+
+[ -n "$version" ] || die "usage: bin/release <version> [--dry-run] [--yes]"
+[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || die "\"$version\" is not a version, e.g. 1.2.3 or 1.2.3-rc.1"
+
+tag="v$version"
+name=$(node -p "require('./package.json').name")
+current=$(node -p "require('./package.json').version")
+
+step "Checking the working tree"
+branch=$(git rev-parse --abbrev-ref HEAD)
+[ "$branch" = "main" ] || die "not on main (on $branch)"
+[ -z "$(git status --porcelain)" ] || die "working tree is dirty; commit or stash first"
+git fetch --quiet origin main
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || die "main is behind or diverged from origin/main; pull first"
+[ -z "$(git tag -l "$tag")" ] || die "$tag already exists locally"
+[ -z "$(git ls-remote --tags origin "$tag")" ] || die "$tag already exists on origin"
+
+node -e "
+  const a='$version'.split(/[.-]/).map(Number), b='$current'.split(/[.-]/).map(Number);
+  for (let i=0;i<3;i++) { if ((a[i]||0) > (b[i]||0)) process.exit(0); if ((a[i]||0) < (b[i]||0)) process.exit(1) }
+  process.exit(1)
+" || die "$version is not newer than $current"
+
+# A release with no changelog entry is one nobody can read, and the workflow
+# refuses a tag that disagrees with package.json. Catch both here instead.
+grep -qE "^## ${version//./\\.}( — .*)?$" CHANGELOG.md ||
+  die "CHANGELOG.md has no \`## $version\` heading — write the entry first"
+
+# npm cannot attach a trusted publisher to a package that does not exist yet.
+step "Checking $name is on npm"
+if ! npm view "$name" version >/dev/null 2>&1; then
+  cat >&2 <<EOF
+
+release: $name has never been published, and npm will not attach a trusted
+publisher to a package that does not exist — so CI cannot make the first
+release. Do it once from here:
+
+  npm login
+  npm run build
+  npm publish --access public
+
+Then add the trusted publisher at
+https://www.npmjs.com/package/$name/access (GitHub Actions, this repo,
+release.yml, environment "npm"), and every release after that is this script.
+
+EOF
+  exit 1
+fi
+
+step "Running the suite"
+npm ci --silent
+npm test >/dev/null
+npm run build --silent
+npm pack --dry-run >/dev/null 2>&1
+
+echo
+step "$current → $version"
+printf '  %-26s %s\n' "package.json" "\"version\": \"$version\""
+printf '  %-26s %s\n' "CHANGELOG.md" "## $version — $(date +%F)"
+printf '  %-26s %s\n' "git commit" "Release $tag"
+printf '  %-26s %s\n' "git tag" "$tag"
+printf '  %-26s %s\n' "git push" "origin main $tag"
+echo
+echo "Pushing $tag publishes $version to npm. That cannot be undone —"
+echo "an unpublished version's number can never be reused."
+echo
+
+if $dry_run; then step "Dry run, nothing changed"; exit 0; fi
+
+if ! $assume_yes; then
+  read -r -p "Release $tag? [y/N] " reply
+  [[ "$reply" =~ ^[Yy]$ ]] || die "cancelled"
+fi
+
+# From here the tree gets written to, so anything that fails puts it back.
+restore() { git checkout -- package.json package-lock.json CHANGELOG.md 2>/dev/null || true; git tag -d "$tag" >/dev/null 2>&1 || true; }
+trap 'echo "release: putting the tree back" >&2; restore' ERR
+
+step "Writing the version and the changelog"
+npm version "$version" --no-git-tag-version --allow-same-version >/dev/null
+perl -0pi -e "s/^## \Q$version\E(?: — .*)?\$/## $version — $(date +%F)/m" CHANGELOG.md
+
+step "Committing and tagging"
+git add package.json package-lock.json CHANGELOG.md
+git commit --quiet -m "Release $tag"
+git tag -a "$tag" -m "Release $tag"
+
+trap - ERR
+
+step "Pushing"
+git push --quiet origin main
+git push --quiet origin "$tag"
+
+echo
+step "$tag pushed. The Release workflow is publishing $version."
+repo=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)
+[ -n "$repo" ] && echo "  gh run watch --repo $repo"
+echo "  https://www.npmjs.com/package/$name/v/$version"
