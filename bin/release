@@ -48,25 +48,17 @@ git fetch --quiet origin main
 [ -z "$(git tag -l "$tag")" ] || die "$tag already exists locally"
 [ -z "$(git ls-remote --tags origin "$tag")" ] || die "$tag already exists on origin"
 
-# npm cannot attach a trusted publisher to a package that does not exist yet.
+# npm will not attach a trusted publisher to a package that does not exist, so
+# the first release cannot come from CI: a runner has nobody to answer the 2FA
+# prompt. It can come from here, which is the same publish with a person at the
+# keyboard. Every release after this one goes out through CI.
 step "Checking $name is on npm"
+bootstrap=false
 if ! npm view "$name" version >/dev/null 2>&1; then
-  cat >&2 <<EOF
-
-release: $name has never been published, and npm will not attach a trusted
-publisher to a package that does not exist — so CI cannot make the first
-release. Do it once from here:
-
-  npm login
-  npm run build
-  npm publish --access public
-
-Then add the trusted publisher at
-https://www.npmjs.com/package/$name/access (GitHub Actions, this repo,
-release.yml, environment "npm"), and every release after that is this script.
-
-EOF
-  exit 1
+  bootstrap=true
+  echo "  $name is not on npm yet, so this release publishes from here."
+  echo "  npm will pause for 2FA. Later releases publish from CI with provenance;"
+  echo "  this one cannot carry it, because provenance is signed by the runner."
 fi
 
 # The question is not whether the version beats the one in package.json — on a
@@ -78,7 +70,9 @@ node -e "
   process.exit(0)
 " || die "$version is older than $current"
 
-npm view "$name@$version" version >/dev/null 2>&1 && die "$version is already on npm"
+if ! $bootstrap && npm view "$name@$version" version >/dev/null 2>&1; then
+  die "$version is already on npm"
+fi
 
 # A release with no changelog entry is one nobody can read, and the workflow
 # refuses a tag that disagrees with package.json. Catch both here instead.
@@ -97,9 +91,14 @@ printf '  %-26s %s\n' "package.json" "\"version\": \"$version\""
 printf '  %-26s %s\n' "CHANGELOG.md" "## $version — $(date +%F)"
 printf '  %-26s %s\n' "git commit" "Release $tag"
 printf '  %-26s %s\n' "git tag" "$tag"
+$bootstrap && printf '  %-26s %s\n' "npm publish" "$version, from here"
 printf '  %-26s %s\n' "git push" "origin main $tag"
 echo
-echo "Pushing $tag publishes $version to npm. That cannot be undone —"
+if $bootstrap; then
+  echo "This publishes $version to npm from this machine. That cannot be undone —"
+else
+  echo "Pushing $tag publishes $version to npm. That cannot be undone —"
+fi
 echo "an unpublished version's number can never be reused."
 echo
 
@@ -118,6 +117,11 @@ step "Writing the version and the changelog"
 npm version "$version" --no-git-tag-version --allow-same-version >/dev/null
 perl -0pi -e "s/^## \Q$version\E(?: — .*)?\$/## $version — $(date +%F)/m" CHANGELOG.md
 
+if $bootstrap; then
+  step "Publishing $version from here"
+  npm publish --access public
+fi
+
 step "Committing and tagging"
 git add package.json package-lock.json CHANGELOG.md
 git commit --quiet -m "Release $tag"
@@ -130,7 +134,14 @@ git push --quiet origin main
 git push --quiet origin "$tag"
 
 echo
-step "$tag pushed. The Release workflow is publishing $version."
+if $bootstrap; then
+  step "$version published, and $tag pushed."
+  echo "  Add the trusted publisher so CI can do the next one:"
+  echo "  https://www.npmjs.com/package/$name/access"
+  echo "  GitHub Actions · this repo · release.yml · environment \"npm\""
+else
+  step "$tag pushed. The Release workflow is publishing $version."
+fi
 repo=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)
 [ -n "$repo" ] && echo "  gh run watch --repo $repo"
 echo "  https://www.npmjs.com/package/$name/v/$version"

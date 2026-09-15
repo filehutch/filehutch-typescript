@@ -55,5 +55,15 @@ jobs:
       - name: Run tests
         run: npm test
 
+      # The first release is published from a laptop, because npm will not
+      # attach a trusted publisher to a package that does not exist and a
+      # runner cannot answer a 2FA prompt. Its tag still lands here, so skip
+      # rather than fail on a version that is already out.
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if npm view "$(node -p "require('./package.json').name")@${version}" version >/dev/null 2>&1; then
+            echo "${version} is already on npm; nothing to publish."
+            exit 0
+          fi
+          npm publish --provenance --access public
