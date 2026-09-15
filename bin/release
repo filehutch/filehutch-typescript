@@ -48,17 +48,6 @@ git fetch --quiet origin main
 [ -z "$(git tag -l "$tag")" ] || die "$tag already exists locally"
 [ -z "$(git ls-remote --tags origin "$tag")" ] || die "$tag already exists on origin"
 
-node -e "
-  const a='$version'.split(/[.-]/).map(Number), b='$current'.split(/[.-]/).map(Number);
-  for (let i=0;i<3;i++) { if ((a[i]||0) > (b[i]||0)) process.exit(0); if ((a[i]||0) < (b[i]||0)) process.exit(1) }
-  process.exit(1)
-" || die "$version is not newer than $current"
-
-# A release with no changelog entry is one nobody can read, and the workflow
-# refuses a tag that disagrees with package.json. Catch both here instead.
-grep -qE "^## ${version//./\\.}( — .*)?$" CHANGELOG.md ||
-  die "CHANGELOG.md has no \`## $version\` heading — write the entry first"
-
 # npm cannot attach a trusted publisher to a package that does not exist yet.
 step "Checking $name is on npm"
 if ! npm view "$name" version >/dev/null 2>&1; then
@@ -79,6 +68,22 @@ release.yml, environment "npm"), and every release after that is this script.
 EOF
   exit 1
 fi
+
+# The question is not whether the version beats the one in package.json — on a
+# first release they are the same number, because the file already carries it.
+# It is whether that version has been released already.
+node -e "
+  const a='$version'.split(/[.-]/).map(Number), b='$current'.split(/[.-]/).map(Number);
+  for (let i=0;i<3;i++) { if ((a[i]||0) > (b[i]||0)) process.exit(0); if ((a[i]||0) < (b[i]||0)) process.exit(1) }
+  process.exit(0)
+" || die "$version is older than $current"
+
+npm view "$name@$version" version >/dev/null 2>&1 && die "$version is already on npm"
+
+# A release with no changelog entry is one nobody can read, and the workflow
+# refuses a tag that disagrees with package.json. Catch both here instead.
+grep -qE "^## ${version//./\\.}( — .*)?$" CHANGELOG.md ||
+  die "CHANGELOG.md has no \`## $version\` heading — write the entry first"
 
 step "Running the suite"
 npm ci --silent
