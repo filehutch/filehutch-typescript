@@ -1,6 +1,6 @@
 {
   "name": "@filehutch/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript client for FileHutch. Your app persists an opaque file id; FileHutch owns uploads, delivery and transforms.",
   "license": "MIT",
   "type": "module",
