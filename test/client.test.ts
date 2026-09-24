@@ -4,7 +4,8 @@ import assert from "node:assert/strict"
 import { FileHutch } from "../src/client.js"
 import {
   AuthenticationError, ConfigurationError, ConnectionError, InvalidStateError, NotFoundError,
-  PlanLimitError, PolicyError, RateLimitError, ServerError, TransformError, TransformsUnsupportedError,
+  PermissionError, PlanLimitError, PolicyError, RateLimitError, ServerError, TransformError, TransformsUnsupportedError,
+  UploadError,
 } from "../src/errors.js"
 import { BASE, FILE_ID, STORAGE, errorJson, fileJson, options, projectJson, stubFetch, transformsJson } from "./support.js"
 
@@ -143,6 +144,8 @@ test("a storage rejection is an upload failure, not a control-plane one", async 
   await assert.rejects(
     () => new FileHutch(options(fetch)).upload("hello", { policy: "documents", filename: "a.txt" }),
     (error: any) => {
+      assert.ok(error instanceof UploadError, `expected UploadError, got ${error.constructor.name}`)
+      assert.ok(!(error instanceof PermissionError), "a bucket's 403 is not the API key lacking a permission")
       assert.equal(error.code, "storage_rejected")
       assert.match(error.message, /AccessDenied/)
       return true
@@ -158,6 +161,8 @@ test("error codes map to typed errors, ahead of status", async () => {
     ["not_ready", 409, InvalidStateError],
     ["transform_not_found", 422, TransformError],
     ["transforms_unsupported", 409, TransformsUnsupportedError],
+    ["checksum_mismatch", 422, UploadError],
+    ["checksum_unverifiable", 422, UploadError],
     ["plan_limit", 402, PlanLimitError],
   ]
 

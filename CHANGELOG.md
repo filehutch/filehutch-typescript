@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1
+
+### Fixed
+
+- A PUT the bucket refused (`storage_rejected`) is an `UploadError`, as documented. It was mapped
+  by HTTP status, so a 403 from storage came out as a `PermissionError`, which reads as the API key
+  lacking a permission, a 400 as a plain `ApiError`, and a 5xx as a `ServerError`.
+- `checksum_mismatch` and `checksum_unverifiable` are `UploadError`s too, rather than
+  `InvalidRequestError`s. Both mean the bytes that arrived are not the bytes that were sent.
+
 ## 0.1.0 — 2026-09-15
 
 First release.

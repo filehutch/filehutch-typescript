@@ -218,7 +218,7 @@ any `details`. Match on `code` or the class, never the message.
 | `ConfigError` | `invalid_config`: the config file has an unknown key, bad size or bad name |
 | `PlanLimitError` | 402: the team is out of storage or projects on its plan |
 | `TransformError` → `TransformsUnsupportedError` | unknown transform or non-image; storage that cannot render |
-| `UploadError` | storage rejected the PUT, upload expired or incomplete, size mismatch |
+| `UploadError` | storage rejected the PUT (`storage_rejected`, whatever its status), upload expired or incomplete, size or checksum mismatch |
 | `StorageError` | FileHutch could not reach the bucket |
 | `RateLimitError`, `ServerError` | 429, 5xx |
 
