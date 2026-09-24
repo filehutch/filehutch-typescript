@@ -80,6 +80,12 @@ const BY_CODE: Record<string, ApiErrorClass> = {
   upload_expired: UploadError,
   upload_incomplete: UploadError,
   size_mismatch: UploadError,
+  // The bucket itself refused the PUT. Mapped here, not by status: a 403 from
+  // storage means the presigned URL was refused, not that the API key lacks a
+  // permission, and would otherwise come out as a PermissionError.
+  storage_rejected: UploadError,
+  checksum_mismatch: UploadError,
+  checksum_unverifiable: UploadError,
   storage_error: StorageError,
   verification_failed: StorageError,
   plan_limit: PlanLimitError,
